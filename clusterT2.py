@@ -1,6 +1,10 @@
-## fuck yea
-# most succesful version of video/pic part
-############   use this one --> (actually dont)
+## rgb capture works
+# k-means clustering seems to work but need to visualize it
+# add the recommendor
+
+## early version (dont use)
+
+import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import time
@@ -29,11 +33,11 @@ x2 = int(center[0] + rect_width/2)
 y2 = int(center[1] + rect_height/2)
 
 # Define the lower and upper bounds of the skin color in RGB
-lower_skin = np.array([0, 0, 0])                #original: 0, 20, 70  # these #'s sets a limit on how dark/light
-                                                #skin color should be
-upper_skin = np.array([255, 255, 255])          #50, 255, 255
-                        #but these were more accurate tbh
-                        # and detects all colors as skin color.
+lower_skin = np.array([0, 20, 70])
+upper_skin = np.array([50, 255, 255])
+
+# Initialize the cluster centers
+last_centers = None
 
 # Loop over frames from the webcam
 while True:
@@ -67,25 +71,20 @@ while True:
     # Threshold the HSV image to get only skin color regions
     mask = cv2.inRange(hsv_sub_region, lower_skin, upper_skin)
 
-    # Compute the mean RGB values of the pixels in the skin color regions
-    mean_color = cv2.mean(sub_region, mask=mask)[:3]
+    # Check if there are any skin color pixels in the sub-region
+    if np.sum(mask) > 0:
+        # Compute the cluster centers of the pixels in the skin color regions
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        num_clusters = 1
+        flags = cv2.KMEANS_RANDOM_CENTERS
+        data = sub_region[mask > 0].reshape(-1, 3).astype(np.float32)
+        ret, labels, centers = cv2.kmeans(data, num_clusters, None, criteria, 10, flags)
 
-    # Convert the mean RGB values to integers
-    bgr_mean = np.round(mean_color).astype(np.uint8)
+        # Store the cluster centers for the current sub-region
+        last_centers = centers
 
-    # Convert the BGR values to RGB values
-    rgb_mean = cv2.cvtColor(np.uint8([[bgr_mean]]), cv2.COLOR_BGR2RGB)[0][0]
+        # Convert the BGR values to RGB values
+        # Convert the BGR values to RGB values
+        rgb_centers = cv2.cvtColor(centers.astype(np.uint8), cv2.COLOR_BGR2RGB)
 
-    # Print the RGB values of the sub-region
-    print("RGB Mean: ", rgb_mean)
 
-    # Display the frame with the mean skin color as text on it
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(frame, "RGB Mean: " + str(rgb_mean), (10, 50), font, 1, (0, 255, 0), 2)
-
-    # Display the frame with the mean skin color as text on    it
-    cv2.imshow("Foundation Recommendor", frame)
-
-# Release the VideoCapture object and close all windows
-capture.release()
-cv2.destroyAllWindows()

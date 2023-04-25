@@ -1,10 +1,8 @@
-##takes pictures when user clickes 'q'
-# implementing k-means clustering
+## bru the datasets doesnt have rgb values
+# turned the rgb values into hex values >:(
 
-import pandas as pd
 import cv2
 import numpy as np
-from sklearn.cluster import KMeans
 import time
 
 # Create a VideoCapture object to capture frames from the webcam
@@ -31,8 +29,11 @@ x2 = int(center[0] + rect_width/2)
 y2 = int(center[1] + rect_height/2)
 
 # Define the lower and upper bounds of the skin color in RGB
-lower_skin = np.array([0, 20, 70])
-upper_skin = np.array([50, 255, 255])
+lower_skin = np.array([0, 0, 0])                #original: 0, 20, 70  # these #'s sets a limit on how dark/light
+                                                #skin color should be
+upper_skin = np.array([255, 255, 255])          #50, 255, 255
+                        #but these were more accurate tbh
+                        # and detects all colors as skin color.
 
 # Loop over frames from the webcam
 while True:
@@ -75,57 +76,19 @@ while True:
     # Convert the BGR values to RGB values
     rgb_mean = cv2.cvtColor(np.uint8([[bgr_mean]]), cv2.COLOR_BGR2RGB)[0][0]
 
-    # Print the RGB values of the sub-region
-    print("RGB Mean: ", rgb_mean)
+    # Convert the RGB values to a hexadecimal string
+    hex_mean = '#' + ''.join([hex(int(c)).lstrip('0x').zfill(2) for c in rgb_mean])
 
-    # Display the frame with the mean skin color as text on it
+    # Print the hexadecimal value of the sub-region
+    print("Hex Mean: ", hex_mean)
+
+    # Display the frame with the mean skin color as a text overlay
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(frame, "RGB Mean: " + str(rgb_mean), (10, 50), font, 1, (0, 255, 0), 2)
+    cv2.putText(frame, hex_mean, (x1, y1-10), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
-    # Display the frame with the mean skin color as text on it
+    # Display the frame with the rectangle and the mean skin color text overlay
     cv2.imshow("Foundation Recommendor", frame)
 
-# Release the VideoCapture object and close all windows
+#Release the VideoCapture object and close all windows
 capture.release()
 cv2.destroyAllWindows()
-
-#################### implementing k-means clustering
-## Load the dataset
-data = pd.read_csv(r"C:\Users\dahan\OneDrive\Documents\shades.csv")
-
-# Load data into numpy array
-#data = np.loadtxt("C:\Users\dahan\OneDrive\Documents\shades.csv", delimiter=',')
-
-# Preprocess data by scaling
-data = (data - data.mean(axis=0)) / data.std(axis=0)
-
-# Choose number of clusters
-k = 3
-
-# Initialize K-means object
-kmeans = KMeans(n_clusters=k, init='random')
-
-# Fit K-means to data
-kmeans.fit(data)
-
-# Get cluster labels and centroids
-labels = kmeans.labels_
-centroids = kmeans.cluster_centers_
-
-# Evaluate quality of clusters using sum of squared distances
-sse = kmeans.inertia_
-
-import matplotlib.pyplot as plt
-# Create a scatter plot of the data points colored by their cluster label
-plt.scatter(data[:, 0], data[:, 1], c=labels)
-
-# Create a scatter plot of the centroids
-plt.scatter(centroids[:, 0], centroids[:, 1], marker='*', s=200, linewidths=3, color='r')
-
-# Add axis labels and title
-plt.xlabel('Feature 1')
-plt.ylabel('Feature 2')
-plt.title('K-means Clustering (k={})'.format(k))
-
-# Show the plot
-plt.show()

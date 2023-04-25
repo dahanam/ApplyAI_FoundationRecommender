@@ -1,11 +1,23 @@
-##takes pictures when user clickes 'q'
-# implementing k-means clustering
+## FINAL VERSION <3
 
-import pandas as pd
 import cv2
 import numpy as np
-from sklearn.cluster import KMeans
+import pandas as pd
 import time
+from sklearn.cluster import KMeans
+import colorsys
+
+# Load the Makeup Shades Dataset
+makeup_data = pd.read_csv("C:/Users/dahan/OneDrive/Documents/shades.csv")
+
+# Extract RGB values of pixels from the dataset
+makeup_rgb = makeup_data[['hex']].apply(lambda x: pd.Series([int(x['hex'][i:i+2], 16) for i in (0, 2, 4)]), axis=1)
+
+# Define the number of clusters (k)
+k = 5
+
+# Perform k-means clustering on the RGB values
+kmeans = KMeans(n_clusters=k, random_state=0).fit(makeup_rgb)
 
 # Create a VideoCapture object to capture frames from the webcam
 capture = cv2.VideoCapture(0)
@@ -48,7 +60,7 @@ while True:
     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
     # Display the frame with the rectangle
-    cv2.imshow("Foundation Recommendor", frame)
+    cv2.imshow("Foundation Recommender", frame)
 
     # Wait for the user to press any key to take a picture
     key = cv2.waitKey(0)
@@ -75,57 +87,19 @@ while True:
     # Convert the BGR values to RGB values
     rgb_mean = cv2.cvtColor(np.uint8([[bgr_mean]]), cv2.COLOR_BGR2RGB)[0][0]
 
-    # Print the RGB values of the sub-region
-    print("RGB Mean: ", rgb_mean)
+    # Convert the RGB values to a hexadecimal integer
+    hex_mean = '#{0:02x}{1:02x}{2:02x}'.format(rgb_mean[0], rgb_mean[1], rgb_mean[2])
 
-    # Display the frame with the mean skin color as text on it
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(frame, "RGB Mean: " + str(rgb_mean), (10, 50), font, 1, (0, 255, 0), 2)
+    #Find the index of the closest cluster center to the mean color
+    distances = [np.sqrt(np.sum((kmeans.cluster_centers_[i] - bgr_mean) ** 2)) for i in range(k)]
+    closest_cluster_index = np.argmin(distances)
 
-    # Display the frame with the mean skin color as text on it
-    cv2.imshow("Foundation Recommendor", frame)
+    #Get the makeup shade corresponding to the closest cluster center
+    makeup_shade = makeup_data.loc[kmeans.labels_ == closest_cluster_index]['hex'].values[0]
 
-# Release the VideoCapture object and close all windows
+    #Display the recommended makeup shade
+    print(f"Recommended makeup shade: {makeup_shade}")
+
+##Release the VideoCapture object and close all windows
 capture.release()
 cv2.destroyAllWindows()
-
-#################### implementing k-means clustering
-## Load the dataset
-data = pd.read_csv(r"C:\Users\dahan\OneDrive\Documents\shades.csv")
-
-# Load data into numpy array
-#data = np.loadtxt("C:\Users\dahan\OneDrive\Documents\shades.csv", delimiter=',')
-
-# Preprocess data by scaling
-data = (data - data.mean(axis=0)) / data.std(axis=0)
-
-# Choose number of clusters
-k = 3
-
-# Initialize K-means object
-kmeans = KMeans(n_clusters=k, init='random')
-
-# Fit K-means to data
-kmeans.fit(data)
-
-# Get cluster labels and centroids
-labels = kmeans.labels_
-centroids = kmeans.cluster_centers_
-
-# Evaluate quality of clusters using sum of squared distances
-sse = kmeans.inertia_
-
-import matplotlib.pyplot as plt
-# Create a scatter plot of the data points colored by their cluster label
-plt.scatter(data[:, 0], data[:, 1], c=labels)
-
-# Create a scatter plot of the centroids
-plt.scatter(centroids[:, 0], centroids[:, 1], marker='*', s=200, linewidths=3, color='r')
-
-# Add axis labels and title
-plt.xlabel('Feature 1')
-plt.ylabel('Feature 2')
-plt.title('K-means Clustering (k={})'.format(k))
-
-# Show the plot
-plt.show()
