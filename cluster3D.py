@@ -14,7 +14,7 @@ hex_codes = makeup_df['hex'].values
 rgb_values = np.array([list(int(hex_code.strip('#')[i:i+2], 16) for i in (0, 2, 4)) for hex_code in hex_codes])
 
 # Define the number of clusters
-num_clusters = 5
+num_clusters = 6
 
 # Initialize the k-means clustering algorithm
 kmeans = KMeans(n_clusters=num_clusters, random_state=42)

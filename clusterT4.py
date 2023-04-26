@@ -1,22 +1,24 @@
-## just testing the print
-
-## FINAL FINAL VERSION <3
+## maybe
 
 import cv2
 import numpy as np
 import pandas as pd
 import time
 from sklearn.cluster import KMeans
-import colorsys
+import webcolors
 
 # Load the Makeup Shades Dataset
 makeup_data = pd.read_csv("C:/Users/dahan/OneDrive/Documents/shades.csv")
 
 # Extract RGB values of pixels from the dataset
-makeup_rgb = makeup_data[['hex']].apply(lambda x: pd.Series([int(x['hex'][i:i+2], 16) for i in (0, 2, 4)]), axis=1)
+makeup_rgb = makeup_data[['hex']].values
+
+# Convert hex color codes to RGB values
+makeup_rgb = [webcolors.hex_to_rgb(hex_color[0].strip()) for hex_color in makeup_rgb]
+
 
 # Define the number of clusters (k)
-k = 6
+k = 5
 
 # Perform k-means clustering on the RGB values
 kmeans = KMeans(n_clusters=k, random_state=0).fit(makeup_rgb)
@@ -78,32 +80,26 @@ while True:
     hsv_sub_region = cv2.cvtColor(sub_region, cv2.COLOR_BGR2HSV)
 
     # Threshold the HSV image to get only skin color regions
-    mask = cv2.inRange(hsv_sub_region, lower_skin, upper_skin)
+    mask = cv2.inRange(hsv_sub_region,lower_skin, upper_skin)
 
-    # Compute the mean RGB values of the pixels in the skin color regions
-    mean_color = cv2.mean(sub_region, mask=mask)[:3]
+    # Apply a Gaussian blur to the mask to reduce noise
+    mask = cv2.GaussianBlur(mask, (5, 5), 0)
 
-    # Convert the mean RGB values to integers
-    bgr_mean = np.round(mean_color).astype(np.uint8)
+    # Perform k-means clustering on the colors in the sub-region of the image
+    colors = cv2.cvtColor(sub_region, cv2.COLOR_BGR2RGB).reshape(-1, 3)
+    labels = kmeans.predict(colors)
 
-    # Convert the BGR values to RGB values
-    rgb_mean = cv2.cvtColor(np.uint8([[bgr_mean]]), cv2.COLOR_BGR2RGB)[0][0]
+    # Determine the most common color in the sub-region of the image
+    counts = np.bincount(labels)
+    most_common_color = kmeans.cluster_centers_[np.argmax(counts)]
 
-    # Convert the RGB values to a hexadecimal integer
-    hex_mean = '#{0:02x}{1:02x}{2:02x}'.format(rgb_mean[0], rgb_mean[1], rgb_mean[2])
+    # Convert the most common color to its corresponding shade name
+    closest_colors = webcolors.rgb_to_name(most_common_color)
 
-    #Find the index of the closest cluster center to the mean color
-    distances = [np.sqrt(np.sum((kmeans.cluster_centers_[i] - bgr_mean) ** 2)) for i in range(k)]
-    closest_cluster_index = np.argmin(distances)
+    # Print the name of the closest shade
+    print("The closest shade is:", closest_colors)
 
-    #Get the makeup shade corresponding to the closest cluster center
-    makeup_shade = makeup_data.loc[kmeans.labels_ == closest_cluster_index]['hex'].values[0]
-
-    #printing
-    index = makeup_data.index[makeup_data['hex'] == makeup_shade].tolist()[0]
-    recommended_shade = makeup_data.iloc[index]
-    print(f"Recommended makeup shade: {recommended_shade['brand']} - {recommended_shade['product']} - {recommended_shade['hex']}")
-
-##Release the VideoCapture object and close all windows
+# Release the VideoCapture object and close all windows
 capture.release()
 cv2.destroyAllWindows()
+
