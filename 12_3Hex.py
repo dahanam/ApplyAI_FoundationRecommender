@@ -33,7 +33,7 @@ lower_skin = np.array([0, 0, 0])                #original: 0, 20, 70  # these #'
                                                 #skin color should be
 upper_skin = np.array([255, 255, 255])          #50, 255, 255
                         #but these were more accurate tbh
-                        # and detects all colors as skin color.
+                        # detects all colors as skin color.
 
 # Loop over frames from the webcam
 while True:
