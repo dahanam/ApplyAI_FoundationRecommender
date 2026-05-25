@@ -1,7 +1,3 @@
-## just testing the print
-
-## FINAL FINAL VERSION <3
-
 import cv2
 import numpy as np
 import pandas as pd
