@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 import colorsys
 
 # Load the Makeup Shades Dataset
-makeup_data = pd.read_csv("C:/Users/dahan/OneDrive/Documents/shades.csv")
+makeup_data = pd.read_csv("shades.csv")
 
 # Extract RGB values of pixels from the dataset
 makeup_rgb = makeup_data[['hex']].apply(lambda x: pd.Series([int(x['hex'][i:i+2], 16) for i in (0, 2, 4)]), axis=1)
